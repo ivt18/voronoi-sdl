@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#define DEBUG
+// #define DEBUG
 
 // window dimensions
 #define WIDTH 1000
@@ -169,8 +169,23 @@ int main() {
                     quit = true;
                     break;
 
-                default:
-                    break;
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym) {
+                        case SDLK_SPACE:
+                            generate_centroids();
+                            render(renderer, buf);
+                            update(renderer, buf);
+                            break;
+
+                        case SDLK_q:
+                        case SDLK_ESCAPE:
+                            quit = true;
+                            break;
+
+                        default: break;
+                    }
+
+                default: break;
             }
         }
     }
