@@ -2,8 +2,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <vector>
 
 // #define DEBUG
+
+// key bindings
+#define K_GENERATE SDLK_SPACE
+#define K_QUIT SDLK_q
+#define K_INTERACTIVE SDLK_i
 
 // window dimensions
 #define WIDTH 1000
@@ -34,16 +40,19 @@ struct Color {
     }
 };
 
-static Vector2 centroid_positions[CENTROID_CNT];
-static Color centroid_colors[CENTROID_CNT];
+static std::vector<Vector2> centroid_positions;
+static std::vector<Color> centroid_colors;
 
-static inline void generate_centroids() {
-    for (size_t i = 0; i < CENTROID_CNT; ++i) {
-        centroid_positions[i].x = rand() % WIDTH;
-        centroid_positions[i].y = rand() % HEIGHT;
-        centroid_colors[i].r = rand() % UINT8_MAX;
-        centroid_colors[i].g = rand() % UINT8_MAX;
-        centroid_colors[i].b = rand() % UINT8_MAX;
+void place_centroid(int x, int y) {
+    centroid_positions.push_back(Vector2(x, y));
+    centroid_colors.push_back(Color(rand() % UINT8_MAX, rand() % UINT8_MAX, rand() % UINT8_MAX));
+}
+
+static inline void generate_centroids(int cnt = CENTROID_CNT) {
+    centroid_positions.clear();
+    centroid_colors.clear();
+    for (size_t i = 0; i < cnt; ++i) {
+        place_centroid(rand() % WIDTH, rand() % HEIGHT);
 
         #ifdef DEBUG
             printf("Centroids:\n");
@@ -100,6 +109,8 @@ void update(SDL_Renderer *renderer, SDL_Texture *buf) {
 }
 
 void render(SDL_Renderer *renderer, SDL_Texture *buf) {
+    if (centroid_positions.size() == 0)
+        return;
     SDL_SetRenderTarget(renderer, buf);
 
     // render each one of the cells (can use some optimization)
@@ -108,7 +119,7 @@ void render(SDL_Renderer *renderer, SDL_Texture *buf) {
         for (Uint32 y = 0; y < HEIGHT; ++y) {
             double d = maxDistance;
             Color *c;
-            for (size_t i = 0; i < CENTROID_CNT; ++i) {
+            for (size_t i = 0; i < centroid_positions.size(); ++i) {
                 double nd = dist2(Vector2(x, y), centroid_positions[i]);
                 if (nd < d) {
                     d = nd;
@@ -120,9 +131,18 @@ void render(SDL_Renderer *renderer, SDL_Texture *buf) {
     }
 
     // render the dots for the centroids
-    for (size_t i = 0; i < CENTROID_CNT; ++i) {
+    for (size_t i = 0; i < centroid_positions.size(); ++i) {
         draw_circle(renderer, centroid_positions[i], Color(0, 0, 0));
     }
+}
+
+void clear(SDL_Renderer *renderer, SDL_Texture *buf) {
+    centroid_positions.clear();
+    centroid_colors.clear();
+    SDL_SetRenderTarget(renderer, buf);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderClear(renderer);
+    update(renderer, buf);
 }
 
 int main() {
@@ -150,7 +170,7 @@ int main() {
             SDL_TEXTUREACCESS_TARGET,
             WIDTH, HEIGHT);
     SDL_SetRenderTarget(renderer, buf);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
 
     // generate the centroid positions
@@ -161,6 +181,8 @@ int main() {
     update(renderer, buf);
 
     bool quit = false;
+    bool interactive = false;
+    int mouse_x, mouse_y;
     while (!quit) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -171,15 +193,37 @@ int main() {
 
                 case SDL_KEYDOWN:
                     switch (event.key.keysym.sym) {
-                        case SDLK_SPACE:
-                            generate_centroids();
+                        case K_GENERATE:
+                            if (!interactive)
+                                generate_centroids();
                             render(renderer, buf);
                             update(renderer, buf);
+                            interactive = false;
                             break;
 
-                        case SDLK_q:
+                        case K_QUIT:
                         case SDLK_ESCAPE:
                             quit = true;
+                            break;
+
+                        case K_INTERACTIVE:
+                            clear(renderer, buf);
+                            interactive = true;
+                            break;
+
+                        default: break;
+                    }
+
+                case SDL_MOUSEBUTTONDOWN:
+                    switch (event.button.button) {
+                        case SDL_BUTTON_LEFT:
+                            if (!interactive)
+                                break;
+                            SDL_GetMouseState(&mouse_x, &mouse_y);
+                            place_centroid(mouse_x, mouse_y);
+                            SDL_SetRenderTarget(renderer, buf); // draw the centroid
+                            draw_circle(renderer, centroid_positions.back(), Color(0, 0, 0));
+                            update(renderer, buf);
                             break;
 
                         default: break;
