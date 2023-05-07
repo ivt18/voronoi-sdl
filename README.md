@@ -2,7 +2,7 @@
 
 A Voronoi diagram implementation using C++ and the SDL library.
 
-The centroids of the Voronoi cells, as well as the colors corresponding to each cell are determined randomly.
+![Random mode Voronoi diagram](/screenshots/random_centroids.png?raw=true)
 
 ## Running
 
@@ -14,9 +14,13 @@ To build and run the project, simply run
 
 Note that, if your window manager isn't BSPWM, you can remove the line indicated in the `build.sh` file, which is intended for BSPWM to launch the program's window in a floating state.
 
-## Interactive mode
+## Modes
 
-In the interactive mode, you can place your own centroids by left-clicking around the screen. After that, by pressing `Space`, the Voronoi diagram for the given centroids will be generated. Pressing space any further will simply keep on generating random diagrams.
+Currently, there are two modes, the **random** mode and the **interactive** mode. In the random mode, centroids are generated randomly, whereas in the interactive mode, you can place your own centroids by left-clicking around the screen. After that, by pressing `Space`, the Voronoi diagram for the given centroids will be generated. Pressing space any further will simply keep on generating random diagrams like in the random mode.
+
+![Interactive mode Voronoi diagram, before coloring](/screenshots/interactive_centroids.png?raw=true "Centroids placed manually in interactive mode")
+
+![Interactive mode Voronoi diagram, colored](/screenshots/interactive_centroids_colored.png?raw=true "Corresponding Voronoi diagram")
 
 ## Controlling the diagram
 
